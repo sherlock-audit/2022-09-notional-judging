@@ -1,0 +1,48 @@
+Arbitrary-Execution
+# `requireValidAccount` does not prevent the vault address itself from opening a position
+
+## Summary
+`requireValidAccount` does not prevent a vault from opening a position in its own vault
+
+## Vulnerability Detail
+`requireValidAccount` is called from `enterVault` in `VaultAccountAction.sol` used to ensure that:
+
+> These accounts cannot receive deposits, transfers, fCash or any other types of value transfers
+
+where the accounts in question are: the reserve address (aka `address(0)`), the `VaultAccountAction` contract address, and any `nToken` contract address. This list, however, does not include the vault address itself.
+
+## Impact
+If the vault address were to open a position on itself, that could cause undefined behavior on the state of the vault.
+
+## Code Snippet
+Failing test case (add to `tests/stateful/vaults/test_vault_entry.py`):
+```python
+def test_no_entry_vault_address(environment, vault, accounts):
+    environment.notional.updateVault(
+        vault.address,
+        get_vault_config(flags=set_flags(0, ENABLED=True), currencyId=2),
+        100_000_000e8,
+    )
+    maturity = environment.notional.getActiveMarkets(1)[0][1]
+    with brownie.reverts():
+        environment.notional.enterVault(
+            vault.address,
+            vault.address,
+            0,
+            maturity,
+            0,
+            0,
+            "",
+            {"from": vault.address},
+        )
+```
+
+## Tool used
+
+Manual Review
+
+## Recommendation
+Consider adding the following `require` statement to `enterVault`:
+```
+require(account != vault);
+```
