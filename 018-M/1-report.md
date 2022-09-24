@@ -1,0 +1,62 @@
+Arbitrary-Execution
+# The check against `debtOutstandingAboveMinBorrow` in `_depositLiquidatorAmount` should be `<=` and not `<`
+
+## Summary
+The check against `debtOutstandingAboveMinBorrow` in `_depositLiquidatorAmount` should be `<=` and not `<`
+
+## Vulnerability Detail
+The `private` function `_depositLiquidatorAmount` is used by `deleverageAccount` in `VaultAccountAction.sol` to calculate the amount a liquidator must deposit in order to liquidate a specific vault account. As part of the calculation, `_depositLiquidatorAmount` checks to ensure that a partial liquidation does not put a vault account into a state where it would be under the minimum borrow capacity for the vault and subsequently unprofitable to liquidate again. To avoid unprofitable liquidations, a liquidator is required to leave at least the minimum borrow amount in a vault. Otherwise if this is not possible, then the liquidator must liquidate the entire borrow amount for a vault account:
+
+```solidity
+// NOTE: deposit amount external is always positive in this method
+if (depositAmountExternal < maxLiquidatorDepositExternal) {
+    // If liquidating past the debt outstanding above the min borrow, then the entire debt outstanding
+    // must be liquidated (that is set to maxLiquidatorDepositExternal)
+    require(depositAmountExternal < assetToken.convertToExternal(debtOutstandingAboveMinBorrow), "Must Liquidate All Debt");
+} else {
+    // In the other case, limit the deposited amount to the maximum
+    depositAmountExternal = maxLiquidatorDepositExternal;
+}
+```
+
+However, the `require` statement should use the comparison `<=` and not `<` as a vault account can borrow an amount equal to the minimum borrow for a vault (inclusive).
+
+## Impact
+While this does not greatly impact a liquidator's ability to liquidate vault accounts, liquidators usually look to extract the maximum value possible from a liquidation. This means liquidators who want to liquidate an account such that it is equivalent to the minimum borrow for a vault would have their transaction revert unexpectedly.
+
+## Code Snippet
+Failing test (add to `tests/stateful/vaults/test_vault_deleverage.py`):
+```python
+def test_deleverage_account_min_balance(environment, accounts, vault):
+    environment.notional.updateVault(
+        vault.address,
+        get_vault_config(currencyId=2, flags=set_flags(0, ENABLED=True)),
+        100_000_000e8,
+    )
+    maturity = environment.notional.getActiveMarkets(1)[0][1]
+
+    environment.notional.enterVault(
+        accounts[1], vault.address, 50_000e18, maturity, 200_000e8, 0, "", {"from": accounts[1]}
+    )
+
+    vault.setExchangeRate(0.95e18)
+
+    vaultConfig = environment.notional.getVaultConfig(vault.address)
+    print(vaultConfig.dict())
+
+    # Liquidator should be allowed to deleverage up to (inclusive) the minimum borrow amount for the vault
+    environment.notional.deleverageAccount(
+        accounts[1], vault.address, accounts[2], 5_000_000e8, False, "", {"from": accounts[2]}
+    )
+```
+
+## Tool used
+
+Manual Review
+
+## Recommendation
+Consider changing the comparison in the `require` statement from `<` to `<=`:
+
+```solidity
+require(depositAmountExternal <= assetToken.convertToExternal(debtOutstandingAboveMinBorrow), "Must Liquidate All Debt");
+```
