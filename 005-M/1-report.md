@@ -10,7 +10,7 @@ A malicious or compromised governance can set the transfer gas cost to an unreas
 
 ## Code Snippet
 
-1. https://github.com/sherlock-audit/2022-09-notional-Bnke0x0/blob/main/contracts-v2/contracts/external/actions/VaultAction.sol#L27-L36
+1. https://github.com/None/blob/None/contracts-v2/contracts/external/actions/VaultAction.sol#L27-L36
 
                '    function updateVault(
         address vaultAddress,
@@ -23,7 +23,7 @@ A malicious or compromised governance can set the transfer gas cost to an unreas
         emit VaultUpdated(vaultAddress, enabled, maxPrimaryBorrowCapacity);
     }'
 
-1. https://github.com/sherlock-audit/2022-09-notional-Bnke0x0/blob/main/contracts-v2/contracts/external/actions/VaultAction.sol#L57-L79
+1. https://github.com/None/blob/None/contracts-v2/contracts/external/actions/VaultAction.sol#L57-L79
 
                '    function updateSecondaryBorrowCapacity(
         address vaultAddress,

@@ -1,0 +1,49 @@
+0xSmartContract
+# Storage Write Removal Bug On Conditional Early Termination
+
+## Summary
+
+On September 5, 2022, a bug in Solidity’s Yul optimizer was found by differential fuzzing.
+
+The bug was [Solidity version 0.8.17](https://github.com/ethereum/solidity/releases/tag/v0.8.17), released on September 08, 2022, provides a fix. The bug is significantly easier to trigger with optimized via-IR code generation, but can theoretically also occur in optimized legacy code generation.
+
+The bug may result in storage writes being incorrectly considered redundant and removed by the optimizer. The problem manifests in presence of assembly functions that may conditionally terminate the external EVM call using the return() or stop() opcode.
+
+Soliditylang assigned the bug a severity of “medium/high”.
+
+https://blog.soliditylang.org/2022/09/08/storage-write-removal-before-conditional-termination/
+
+
+## Vulnerability Detail
+
+Similar to the problem mentioned above, there is a return in the following inline assembly block in the project.
+[TokenUtils.sol#L38-L59](https://github.com/None/blob/None/leveraged-vaults/contracts/utils/TokenUtils.sol#L38-L59)
+
+```js
+    function _checkReturnCode() private pure {
+        bool success;
+        uint256[1] memory result;
+        assembly {
+            switch returndatasize()
+                case 0 {
+                    // This is a non-standard ERC-20
+                    success := 1 // set success to true
+                }
+                case 32 {
+                    // This is a compliant ERC-20
+                    returndatacopy(result, 0, 32)
+                    success := mload(result) // Set `success = returndata` of external call
+                }
+                default {
+                    // This is an excessively non-compliant ERC-20, revert.
+                    revert(0, 0)
+                }
+        }
+
+        if (!success) revert ERC20Error();
+    }
+
+```
+
+## Recommendation
+Use Solidity version 0.8.17 (https://github.com/ethereum/solidity/releases/tag/v0.8.17)

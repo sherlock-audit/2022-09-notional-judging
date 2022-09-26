@@ -8,7 +8,7 @@ Bnke0x0
 At every '_redeem()'/'repaySecondaryCurrencyFromVault()' it checks the balance before the claim and after, to calculate the auraBAL earned, so every underlyingToken  transferred to the strategy address, not during this call, won't be swapped to Notional.
 
 ## Code Snippet
-1. https://github.com/sherlock-audit/2022-09-notional-Bnke0x0/blob/main/contracts-v2/contracts/external/actions/VaultAction.sol#L329-L337
+1. https://github.com/None/blob/None/contracts-v2/contracts/external/actions/VaultAction.sol#L329-L337
 
              'uint256 balanceBefore = underlyingToken.balanceOf(address(this));
             // Tells the vault will redeem the strategy token amount and transfer asset tokens back to Notional
@@ -20,7 +20,7 @@ At every '_redeem()'/'repaySecondaryCurrencyFromVault()' it checks the balance
             require(balanceTransferred >= underlyingExternalToRepay, "Insufficient Repay");
         }'
 
-2. https://github.com/sherlock-audit/2022-09-notional-Bnke0x0/blob/main/contracts-v2/contracts/internal/vaults/VaultConfiguration.sol#L600-L624
+2. https://github.com/None/blob/None/contracts-v2/contracts/internal/vaults/VaultConfiguration.sol#L600-L624
 
                'uint256 amountTransferred;
         if (params.strategyTokens > 0) {

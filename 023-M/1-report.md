@@ -1,0 +1,25 @@
+rajatbeladiya
+# chainlink’s latestRoundData might return stale or incorrect price
+
+## Vulnerability Detail
+Insufficient validation of latestRoundData() will lead to stale prices according to Chainlink documentation.
+
+## Impact
+there will be pricing errors leading to the mis-pricing of assets/risk.
+
+## Code Snippet
+
+https://github.com/None/blob/None/leveraged-vaults/contracts/trading/TradingModule.sol#L220-L226
+
+## Tool used
+Manual Review
+
+## Recommendation
+Add validation for the `roundId`
+
+      (uint80 roundID, int256 basePrice, /* */, uint256 bpUpdatedAt, uint80 answeredInRound) =                         
+      baseOracle.oracle.latestRoundData();
+      require(answeredInRound >= roundID, "Stale price");
+      require(block.timestamp - bpUpdatedAt <= maxOracleFreshnessInSeconds);
+       require(basePrice > 0);
+
