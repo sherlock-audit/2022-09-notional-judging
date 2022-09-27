@@ -16,7 +16,7 @@ If the vault address were to open a position on itself, that could cause undefin
 
 ## Code Snippet
 Failing test case (add to `tests/stateful/vaults/test_vault_entry.py`):
-```python
+```python3
 def test_no_entry_vault_address(environment, vault, accounts):
     environment.notional.updateVault(
         vault.address,
@@ -43,6 +43,6 @@ Manual Review
 
 ## Recommendation
 Consider adding the following `require` statement to `enterVault`:
-```
+```solidity
 require(account != vault);
 ```

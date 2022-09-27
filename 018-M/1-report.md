@@ -26,7 +26,7 @@ While this does not greatly impact a liquidator's ability to liquidate vault acc
 
 ## Code Snippet
 Failing test (add to `tests/stateful/vaults/test_vault_deleverage.py`):
-```python
+```python3
 def test_deleverage_account_min_balance(environment, accounts, vault):
     environment.notional.updateVault(
         vault.address,

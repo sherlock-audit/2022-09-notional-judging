@@ -29,7 +29,7 @@ A user is required to sell a non-zero amount of `strategyTokens` when improving 
 
 ## Code Snippet
 Failing test (add to `tests/stateful/vaults/test_vault_exit.py`):
-```python
+```python3
 def test_exit_vault_transfer_from_account_no_strategy_token_sell(environment, vault, accounts):
     environment.notional.updateVault(
         vault.address,

@@ -27,7 +27,7 @@ A vault account can force _any_ address to liquidate an unhealthy vault account 
 
 ## Code Snippet
 PoC (add to `tests/stateful/vaults/test_vault_deleverage.py`):
-```python
+```python3
 def test_deleverage_account_from_vault_with_different_account(environment, accounts, vault):
     environment.notional.updateVault(
         vault.address,

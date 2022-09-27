@@ -29,7 +29,7 @@ Note: This issue may be infeasible if all the relevant Notional system accounts 
 
 ## Code Snippet
 PoC (add to `tests/stateful/vaults/test_vault_deleverage.py`);
-```python
+```python3
 def test_deleverage_account_instantiate_liquidator_maturity(environment, accounts, vault):
     environment.notional.updateVault(
         vault.address,
