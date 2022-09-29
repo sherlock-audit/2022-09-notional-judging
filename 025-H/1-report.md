@@ -3,12 +3,14 @@
 
 ## Summary
 
+
 On September 5, 2022, a bug in Solidity’s Yul optimizer was found by differential fuzzing.
 
 The bug was [Solidity version 0.8.17](https://github.com/ethereum/solidity/releases/tag/v0.8.17), released on September 08, 2022, provides a fix. The bug is significantly easier to trigger with optimized via-IR code generation, but can theoretically also occur in optimized legacy code generation.
 
 The bug may result in storage writes being incorrectly considered redundant and removed by the optimizer. The problem manifests in presence of assembly functions that may conditionally terminate the external EVM call using the return() or stop() opcode.
 
+## Impact
 Soliditylang assigned the bug a severity of “medium/high”.
 
 https://blog.soliditylang.org/2022/09/08/storage-write-removal-before-conditional-termination/
@@ -19,6 +21,7 @@ https://blog.soliditylang.org/2022/09/08/storage-write-removal-before-conditiona
 Similar to the problem mentioned above, there is a return in the following inline assembly block in the project.
 [TokenUtils.sol#L38-L59](https://github.com/None/blob/None/leveraged-vaults/contracts/utils/TokenUtils.sol#L38-L59)
 
+## Code Snippet
 ```js
     function _checkReturnCode() private pure {
         bool success;
@@ -44,6 +47,8 @@ Similar to the problem mentioned above, there is a return in the following inl
     }
 
 ```
+## Tool used
+Manual Review
 
 ## Recommendation
 Use Solidity version 0.8.17 (https://github.com/ethereum/solidity/releases/tag/v0.8.17)

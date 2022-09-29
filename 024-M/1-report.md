@@ -12,8 +12,10 @@ Solidity docs:"The low-level functions call, delegatecall and staticcall return 
 
 Therefore, transfers may fail silently.
 
+## Impact
 in the `TradingUtils.sol` a call is executed with the following code in `_executeTrade` function
 
+## Code Snippet
 `call` function on line 139
 ```js
   118:     function _executeTrade(
