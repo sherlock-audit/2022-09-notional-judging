@@ -1,31 +1,31 @@
 Arbitrary-Execution
-# Idiosyncratic fCash can prevent users from exiting a vault pre-maturity (TBD)
+# Idiosyncratic fCash can prevent users from exiting a vault pre-maturity
 
 ## Summary
-Idiosyncratic `fCash` can prevent users from exiting a vault prior to maturity
+Idiosyncratic fCash can prevent users from exiting a vault prior to maturity
 
 ## Vulnerability Detail
 
-When `exitVault` in `VaultAccountAction.sol` is called prior to the maturity timestamp of a vault account position, `lendToExitVault` is called in order to 'lend' an `fCash` amount back to Notional. This in turn sets the `tempCashBalance` for a vault account which can then be paid off in a number of ways. Within `lendToExitVault`, `executeTrade` is called to determine the actual asset cash cost to lend the specified `fCash` amount. Before `executeTrade` crafts the trade to send to the Notional AMM, it checks to ensure the given maturity is valid via the `checkValidMaturity` function call in `VaultConfiguration.sol`:
+When `exitVault` in `VaultAccountAction.sol` is called prior to the maturity timestamp of a vault account position, `lendToExitVault` is called in order to 'lend' an fCash amount back to Notional. This in turn sets the `tempCashBalance` for a vault account which can then be paid off in a number of ways. Within `lendToExitVault`, `executeTrade` is called to determine the actual asset cash cost to lend the specified fCash amount. Before `executeTrade` crafts the trade to send to the Notional AMM, it checks to ensure the given maturity is valid via the `checkValidMaturity` function call in `VaultConfiguration.sol`:
 
 ```solidity
-bool isIdiosyncratic;
-uint8 maxMarketIndex = CashGroup.getMaxMarketIndex(currencyId);
-(marketIndex, isIdiosyncratic) = DateTime.getMarketIndex(maxMarketIndex, maturity, blockTime);
-require(marketIndex <= maxBorrowMarketIndex, "Invalid Maturity");
-require(!isIdiosyncratic, "Invalid Maturity");
+function checkValidMaturity(...) ... {
+    bool isIdiosyncratic;
+    uint8 maxMarketIndex = CashGroup.getMaxMarketIndex(currencyId);
+    (marketIndex, isIdiosyncratic) = DateTime.getMarketIndex(maxMarketIndex, maturity, blockTime);
+    require(marketIndex <= maxBorrowMarketIndex, "Invalid Maturity");
+    require(!isIdiosyncratic, "Invalid Maturity");
+}
 ```
 
-Notice that one of the checks ensures that the given maturity is not idiosyncratic. According to the [Notional docs](https://docs.notional.finance/notional-v2/quarterly-rolls/idiosyncratic-fcash), idiosyncratic `fCash` occurs when an `fCash` asset's maturity does not correspond to an active liquidity pool. The Notional docs list an example of when this can occur: 
+Notice that one of the checks ensures that the given maturity is not idiosyncratic. According to the [Notional docs](https://docs.notional.finance/notional-v2/quarterly-rolls/idiosyncratic-fcash), idiosyncratic fCash occurs when an fCash asset's maturity does not correspond to an active liquidity pool. The Notional docs list an example of when this can occur: 
 
 > For example, consider a user who took out a loan from the one-year liquidity pool. At the time of the next quarterly roll, that user's fCash would mature in nine months, and the nine-month liquidity pool would reset after the quarterly roll to be a new one-year liquidity pool. This would result in the user's nine-month fCash becoming idiosyncratic. 
 
-In the above example, a 12-month `fCash` maturity will be idiosyncratic for at least one quarter (3 months). Since the `checkValidMaturity` call reverts when it encounters an idiosyncratic `fCash` maturity, `lendToExitVault`, and by extension `exitVault`, will not work for the duration of time that a maturity is idiosyncratic. 
+In the above example, a 12-month fCash maturity will be idiosyncratic for at least one quarter (3 months). Since the `checkValidMaturity` call reverts when it encounters an idiosyncratic fCash maturity, `lendToExitVault`, and by extension `exitVault`, will not work for the duration of time that a maturity is idiosyncratic. 
 
 ## Impact
-If a user's vault account position maturity is idiosyncratic, they will not be able to call `exitVault`. In the event that a vault is compromised or any other scenario where a user needs to exit prior to maturity but their maturity is idiosyncratic, the user will be unable to do so.
-
-TODO: even if a user does not take out an `fCash` loan they are still vulnerable to the idiosyncratic maturity issue
+For users who have vault account positions where the maturity may become idiosyncratic (maturity date of 1 year or greater), there will be some length of time where they will not be able to call `exitVault`. In the event that a vault is compromised or any other scenario where a user needs to exit prior to maturity but their maturity is idiosyncratic, the user will be unable to do so. This is true for all users of an idiosyncratic maturity, even if a user has not borrowed any fCash in their vault position.
 
 ## Code Snippet
 Update the following values in `scripts/config.py`:
@@ -77,8 +77,8 @@ def test_exit_vault_idiosyncratic_maturity(environment, vault, accounts):
     # after 1 quarter each Notional market is re-initialized
     environment.notional.initializeMarkets(2, False)
 
-    # due to some unforseen circumstance (hack, poor vault strategy, etc.) accounts[1] attempts to
-    # exit the vault prior to the maturity being sttled and retrieve their collateral
+    # due to some unforeseen circumstance (hack, poor vault strategy, etc.) accounts[1] attempts to
+    # exit the vault prior to the maturity being settled and retrieve their collateral
     # despite not having borrowed any fCash, the maturity they entered into is now idiosyncratic and
     # thus exitVault will fail
     environment.notional.exitVault(
@@ -98,4 +98,4 @@ def test_exit_vault_idiosyncratic_maturity(environment, vault, accounts):
 Manual Review
 
 ## Recommendation
-`lendToExitVault` requires a user to lend `fCash` in order to facilitate paying off any debts and exiting a vault. However, the underlying `redeemWithDebtRepayment` has logic to repay debts via the use of transferring underlying tokens from a user to the vault. Therefore, consider adding logic to `lendToExitVault` that would enable users to directly exit a vault and pay off debt exclusively using underlying tokens, which would avoid the issue of attempting to execute a trade when their `fCash` maturity is idiosyncratic.
+`exitVault` requires a user to lend fCash via `lendToExitVault` in order to facilitate paying off any debts and exiting a vault. However, the actual function that repays the debt in `exitVault` is `redeemWithDebtRepayment` in `VaultConfiguration.sol`, which has logic to repay debts via the use of transferring underlying tokens from a user to the vault. Therefore, consider adding logic to `exitVault` that would enable users to directly exit a vault and pay off debt exclusively using underlying tokens, which would avoid the issue of attempting to execute a trade when their fCash maturity is idiosyncratic. Additionally, consider adding logic to `lendToExitVault` to return early when the passed-in fCash value is 0.

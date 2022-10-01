@@ -23,7 +23,7 @@ However, inside the `if` block when the `ONLY_VAULT_DELEVERAGE` flag is set, the
 3. The liquidator does not already have a position in the vault whose maturity is different from the one of the unhealthy account.
 
 ## Impact
-A vault account can force _any_ address to liquidate an unhealthy vault account so long as the above conditions are met, even if the liquidation would be unprofitable for the liquidator.
+A vault can force _any_ address to liquidate an unhealthy vault account so long as the above conditions are met, even if the liquidation would be unprofitable for the liquidator.
 
 ## Code Snippet
 PoC (add to `tests/stateful/vaults/test_vault_deleverage.py`):
