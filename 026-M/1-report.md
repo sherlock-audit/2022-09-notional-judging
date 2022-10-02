@@ -1,19 +1,22 @@
 Waze
-# Use call instead of transfer in transferNativeTokenOut().
+# Unsafe transfer when using transferNativeTokenOut() from GenericToken Lib can result in revert.
 
 ## Summary
-Transfer need to be check for value indicating success.
+Unsafe transfer happen when using transferNativeTokenOut(). Transfer need to be check for value indicating success. 
 ## Vulnerability Detail
-Use call instead of transfer to transfer native token, and return value must be checked if transfer native token is successful or not. Transfer native token with transfer is no longer recommended.
+To transfer native token, the return value must be checked if transfer native token is successful or not. Transfer native token with transfer is no longer recommended. transferNativeTokenOut in GenericToken Lib doesn't accommodate that. 
 ## Impact
-to avoid transfer failed but return false instead. token thats dont actually perform the transfer and return false are till counted as a correct transfer.
+to avoid transfer failed but return false instead. token thats dont actually perform the transfer and return false are till counted as a correct transfer. 
 ## Code Snippet
-https://github.com/None/blob/None/contracts-v2/contracts/internal/balances/protocols/GenericToken.sol#L29
+https://github.com/None/blob/None/contracts-v2/contracts/internal/vaults/VaultConfiguration.sol#L454
+
+https://github.com/None/blob/None/contracts-v2/contracts/internal/vaults/VaultConfiguration.sol#L638
 ## Tool used
 
 Manual Review
 
 ## Recommendation
-add this :
-(bool success, ) = account.call{value: amount}("");
-require(success,"failed to transfer Token");
+implement check value in transferNativeTokenOut() from GenericToken lib using call() instead of transfer().
+Example:
+(bool succeeded, ) = account.call{value: _amount}("");
+require(succeeded, "Transfer failed.");
