@@ -751,7 +751,46 @@ https://github.com/sherlock-audit/2022-09-notional/blob/main/leveraged-vaults/co
 
 
 
-# Issue M-2: getGetAmplificationParameter() precision is not used, which result in accounting issue in MetaStable2TokenAuraHelper.sol and in Boosted3TokenAuraHelper.sol 
+# Issue M-2: Price oracle could get a stale price 
+
+Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/133 
+
+## Found by 
+rajatbeladiya, Lambda, Chom, Waze, GimelSec, ak1, GalloDaSballo
+
+## Summary
+
+`_calculateAnswer()` will get `baseAnswer` from Chainlink oracle. But it doesn't check round id and timestamp, leading to it may get a stale price from Chainlink oracle.
+
+## Vulnerability Detail
+
+In wstETHChainlinkOracle.sol, it check `baseAnswer` > 0, but it doesn't check for the stale price by `updateAt` and `roundId`.
+
+## Impact
+
+Price oracle could get a stale price without checking `roundId`.
+
+## Code Snippet
+
+https://github.com/sherlock-audit/2022-09-notional/blob/main/leveraged-vaults/contracts/trading/oracles/wstETHChainlinkOracle.sol#L26-L44
+
+## Tool used
+
+Manual Review
+
+## Recommendation
+
+Check `answer`, `updateAt` and `roundId` when getting price:
+
+```
+        (uint80 roundId, int256 answer, , uint256 updatedAt, uint80 answeredInRound) = oracle.latestRoundData();
+
+        require(updatedAt > 0, "Round is not complete");
+        require(answer >= 0, "Malfunction");
+        require(answeredInRound >= roundID, "Stale price");
+```
+
+# Issue M-3: getGetAmplificationParameter() precision is not used, which result in accounting issue in MetaStable2TokenAuraHelper.sol and in Boosted3TokenAuraHelper.sol 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/124 
 
@@ -1032,7 +1071,7 @@ We recommend the project use the precision returned from getGetAmplificationPara
 
 
 
-# Issue M-3: stakingContext.auraRewardPool.withdrawAndUnwrap boolean return value not handled in Boosted3TokenPoolUtils.sol and TwoTokenPoolUtils.sol 
+# Issue M-4: stakingContext.auraRewardPool.withdrawAndUnwrap boolean return value not handled in Boosted3TokenPoolUtils.sol and TwoTokenPoolUtils.sol 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/118 
 
@@ -1107,7 +1146,7 @@ require(unstaked, 'unstake failed');
 
 
 
-# Issue M-4: stakingContext.auraBooster.deposit boolean return value not handled in Boosted3TokenPoolUtils.sol 
+# Issue M-5: stakingContext.auraBooster.deposit boolean return value not handled in Boosted3TokenPoolUtils.sol 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/117 
 
@@ -1177,12 +1216,12 @@ We recommend the project handle the stakingContext.auraBooster.deposit boolean r
 
 
 
-# Issue M-5: No Validation Check Against Decimal Of Secondary Token 
+# Issue M-6: No Validation Check Against Decimal Of Secondary Token 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/88 
 
 ## Found by 
-0x52, Jeiwan, ak1, xiaoming90
+ak1, xiaoming90, 0x52, Jeiwan
 
 ## Summary
 
@@ -1291,7 +1330,7 @@ Confirmed, although I would disagree with the severity here to Low. While in the
 
 
 
-# Issue M-6: Gain From Balancer Vaults Can Be Stolen 
+# Issue M-7: Gain From Balancer Vaults Can Be Stolen 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/83 
 
@@ -1432,7 +1471,7 @@ Together, these changes will make the attack uneconomical because of the fees in
 
 
 
-# Issue M-7: Malicious Users Can Deny Notional Treasury From Receiving Fee 
+# Issue M-8: Malicious Users Can Deny Notional Treasury From Receiving Fee 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/82 
 
@@ -1649,7 +1688,7 @@ I think given that the CodeArena issue was graded a High, I think Medium is ok a
 
 
 
-# Issue M-8: `CrossCurrencyfCashVault` Cannot Settle Its Assets In Pieces 
+# Issue M-9: `CrossCurrencyfCashVault` Cannot Settle Its Assets In Pieces 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/79 
 
@@ -1792,7 +1831,7 @@ Valid suggestion.
 
 
 
-# Issue M-9: Balancer Vault Will Receive Fewer Assets As The Current Design Does Not Serve The Interest Of Vault Shareholders 
+# Issue M-10: Balancer Vault Will Receive Fewer Assets As The Current Design Does Not Serve The Interest Of Vault Shareholders 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/76 
 
@@ -1868,7 +1907,7 @@ Yeah I think this is a legitimate issue. We are permissioning reward reinvestmen
 
 
 
-# Issue M-10: Existing Slippage Control Can Be Bypassed During Vault Settlement 
+# Issue M-11: Existing Slippage Control Can Be Bypassed During Vault Settlement 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/73 
 
@@ -2266,7 +2305,7 @@ Slippage control removal is now set to uint256.max which will resolve this issue
 
 
 
-# Issue M-11: Vault Share/Strategy Token Calculation Can Be Broken By First User/Attacker 
+# Issue M-12: Vault Share/Strategy Token Calculation Can Be Broken By First User/Attacker 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/70 
 
@@ -2484,7 +2523,7 @@ A similar issue was found in a past Sherlock audit
 
 
 
-# Issue M-12: Rely On Balancer Oracle Which Is Not Updated Frequently 
+# Issue M-13: Rely On Balancer Oracle Which Is Not Updated Frequently 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/67 
 
@@ -2643,7 +2682,7 @@ This issue is not a duplicate of the Chainlink issues, it should be separate.
 
 
 
-# Issue M-13: Attackers Can DOS Balancer Vaults By Bypassing The BPT Threshold 
+# Issue M-14: Attackers Can DOS Balancer Vaults By Bypassing The BPT Threshold 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/66 
 
@@ -2807,7 +2846,7 @@ That should do it
 
 
 
-# Issue M-14: `CrossCurrencyfCashVault` Cannot Be Upgraded 
+# Issue M-15: `CrossCurrencyfCashVault` Cannot Be Upgraded 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/65 
 
@@ -2917,12 +2956,12 @@ Valid issue, the vault is missing the proper method.
 
 
 
-# Issue M-15: Corruptible Upgradability Pattern 
+# Issue M-16: Corruptible Upgradability Pattern 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/64 
 
 ## Found by 
-supernova, xiaoming90
+xiaoming90, supernova
 
 ## Summary
 
@@ -3033,12 +3072,12 @@ A similar issue was found in the past audit report:
 
 
 
-# Issue M-16: Did Not Approve To Zero First 
+# Issue M-17: Did Not Approve To Zero First 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/59 
 
 ## Found by 
-csanuragjain, 0x52, xiaoming90
+xiaoming90, 0x52, csanuragjain
 
 ## Summary
 
@@ -3145,7 +3184,7 @@ It is recommended to set the allowance to zero before increasing the allowance a
 
 
 
-# Issue M-17: TwoTokenPoolUtils's _getOraclePairPrice produces incorrect oraclePairPrice when balancerOracleWeight is set to be bigger than BALANCER_ORACLE_WEIGHT_PRECISION 
+# Issue M-18: TwoTokenPoolUtils's _getOraclePairPrice produces incorrect oraclePairPrice when balancerOracleWeight is set to be bigger than BALANCER_ORACLE_WEIGHT_PRECISION 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/50 
 
@@ -3339,7 +3378,7 @@ https://github.com/sherlock-audit/2022-09-notional/blob/main/leveraged-vaults/co
 
 
 
-# Issue M-18: Deprecated Balancer Price Oracles could lead to locked funds in the Balancer strategy vaults 
+# Issue M-19: Deprecated Balancer Price Oracles could lead to locked funds in the Balancer strategy vaults 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/46 
 
@@ -3380,12 +3419,12 @@ Yup confirmed, we're removing the balancer oracle dependency
 
 
 
-# Issue M-19: UniV2Adapter#getExecutionData doesn't properly handle native ETH swaps 
+# Issue M-20: UniV2Adapter#getExecutionData doesn't properly handle native ETH swaps 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/33 
 
 ## Found by 
-0x52, Chom
+Chom, 0x52
 
 ## Summary
 
@@ -3454,7 +3493,7 @@ Given that the infrastructure for Uniswap V3 already exists in TradingUtils_exec
 
 
 
-# Issue M-20: Deployments.sol uses the wrong address for UNIV2 router which causes all Uniswap V2 calls to fail 
+# Issue M-21: Deployments.sol uses the wrong address for UNIV2 router which causes all Uniswap V2 calls to fail 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/32 
 
@@ -3497,7 +3536,7 @@ Change UNIV2_ROUTER to the address of the V2 router:
 
 
 
-# Issue M-21: `deleverageAccount` can be used by an address to enter a vault that would otherwise be restricted by the `requireValidAccount` check in `enterVault` 
+# Issue M-22: `deleverageAccount` can be used by an address to enter a vault that would otherwise be restricted by the `requireValidAccount` check in `enterVault` 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/19 
 
@@ -3595,7 +3634,7 @@ Not sure why this issue was closed, but I think it is a valid suggestion. We can
 
 
 
-# Issue M-22: `deleverageAccount` can still be called when a vault is paused 
+# Issue M-23: `deleverageAccount` can still be called when a vault is paused 
 
 Source: https://github.com/sherlock-audit/2022-09-notional-judging/issues/17 
 
